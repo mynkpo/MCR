@@ -83,6 +83,21 @@ std::vector<vec3> rotate3DPoints(std::vector<vec3> points2, vec3 rotation) {
     return points;
 }
 
+std::vector<vec3> applyCameraTransform(std::vector<vec3> points, vec3 cameraPos, vec3 cameraAngles) {
+    std::vector<vec3> final;
+    vec3 caN = vec3(cameraAngles.x * M_PI / 180.0, cameraAngles.y * M_PI / 180.0, cameraAngles.z * M_PI / 180.0);
+    for (vec3 vec : points) {
+        final.push_back(
+            vec3(
+                (vec.x - cameraPos.x)*(cos(caN.y) * cos(caN.z)) + (vec.y-cameraPos.y)*(cos(caN.y)*sin(caN.z)) + (vec.z - cameraPos.z)*(-sin(caN.y)),
+                (vec.x - cameraPos.x)*(sin(caN.x)*sin(caN.y)*cos(caN.z) - cos(caN.x)*sin(caN.z)) + (vec.y-cameraPos.y)*(sin(caN.x)*sin(caN.y)*sin(caN.z) + cos(caN.x)*cos(caN.z)) + (vec.z - cameraPos.z)*(sin(caN.x), cos(caN.y)),
+                (vec.x - cameraPos.x)*(cos(caN.x)*sin(caN.y)*cos(caN.z) + sin(caN.x)*sin(caN.z)) + (vec.y-cameraPos.y)*(cos(caN.x)*sin(caN.y)*sin(caN.z) - sin(caN.x)*cos(caN.z)) + (vec.z - cameraPos.z)*(cos(caN.x), cos(caN.y))
+                )
+        );
+    }
+    return final;
+}
+
 void rotatePoints(std::vector<vec2>& points, double angle) {
     double rad = angle * M_PI / 180.0; // Convert degrees to radians
     double cosTheta = cos(rad);
@@ -251,15 +266,17 @@ int main() {
     while (true) {
 
         // "Clearing" the console
-        for (int i = 0; i < renderer.height*5; i++) {
-            std::cout << "\n";
-        }
+        // for (int i = 0; i < renderer.height*5; i++) {
+        //     std::cout << "\n";
+        // }
 
         //transformations
         rotangle += 1;
         //item.rotation = rotangle;
         //item.coordinets = vec2(25, 13);
-        item.pList = retrieveProjectedPoints(rotate3DPoints(PointHandler::getCubePoints(vec3(0, 0 ,0), 4), vec3(4, rotangle, 0)), 2);
+        item.pList = retrieveProjectedPoints(applyCameraTransform(
+            rotate3DPoints(PointHandler::getCubePoints(vec3(45, 0 ,0), 4), vec3(0, 0, 0))
+            , vec3(-15, 0, -32), vec3(0,0,0)), 9);
 
 
         //PointHandler::pointList.clear();
@@ -277,7 +294,7 @@ int main() {
         const auto start = std::chrono::high_resolution_clock::now();
         std::this_thread::sleep_for(100ms);
         const auto end = std::chrono::high_resolution_clock::now();
-
+        system("cls");
     }
 
 

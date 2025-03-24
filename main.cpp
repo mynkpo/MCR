@@ -233,7 +233,7 @@ class Renderer {
 
     public:
 
-    const int width = 100;
+    const int width = 210;
     const int height = width * 0.2625;
 
     void render() {
@@ -299,6 +299,10 @@ int main() {
             cameraRotMod.x -= 1;
         } else if (nextMove == "k") {
             cameraRotMod.y += 1;
+        } else if (nextMove == "z") {
+            cameraPosMod.y -= 1;
+        } else if (nextMove == "x") {
+            cameraPosMod.y += 1;
         } else {
             std::cout << "Dont recognize" << std::endl;
         }
@@ -308,7 +312,7 @@ int main() {
         //item.coordinets = vec2(25, 13);
         item.pList = retrieveProjectedPoints(applyCameraTransform(
             rotate3DPoints(PointHandler::getCubePoints(vec3(0, 0 ,0), 4), vec3(0, 0, 0))
-            , cameraPosMod, cameraRotMod), 6);
+            , cameraPosMod, cameraRotMod), 15);
 
 
         //PointHandler::pointList.clear();

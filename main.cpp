@@ -17,8 +17,7 @@ struct vec2 {
 
 };
 
-class renderItem {
-    public:
+struct renderItem {
     std::vector<vec2> pList;
     double rotation;
     vec2 coordinets;
@@ -26,6 +25,12 @@ class renderItem {
         this->pList = list;
         this->coordinets = coords;
         this->rotation = rot;
+    }
+    void updateRot(double rot) {
+        this->rotation = rot;
+    }
+    void updatePos(vec2 pos) {
+        this->coordinets = pos;
     }
 };
 
@@ -45,19 +50,20 @@ void rotatePoints(std::vector<vec2>& points, double angle) {
 class PointHandler {
 public:
     static std::list<vec2> pointList;
-    static std::vector<renderItem> toRender;
+    static std::vector<renderItem*> toRender;
     static void addPoint(vec2 vector) {
         pointList.push_back(vector);
     }
     static void update() {
         pointList.clear();
-        for (renderItem item : toRender) {
+        for (renderItem* item : toRender) {
 
-            std::vector<vec2> transformedVec = item.pList;
-            rotatePoints(transformedVec, item.rotation);
 
-            for (vec2 vec : transformedVec) {
-                addPoint(vec.addVec2(item.coordinets));
+            std::vector<vec2> tempList = item->pList;
+            rotatePoints(tempList, item->rotation);
+
+            for (vec2 vec : tempList) {
+                addPoint(vec.addVec2(item->coordinets));
             }
         }
     }
@@ -115,13 +121,24 @@ public:
             length += 1;
         }
         std::vector<vec2> points = {vec2((int)length/2, (int)length/2), vec2(-(int)length/2, (int)length/2), vec2(-(int)length/2, -(int)length/2), vec2((int)length/2, -(int)length/2)};
+        rotatePoints(points, rotation);
+        return points;
+        //addPoint(centre.addVec2(vec2(-length, length)));
+
+    }
+
+    static std::vector<vec2> getSquarePoints(vec2 centre, int length) {
+        if (length % 2 != 0) {
+            length += 1;
+        }
+        std::vector<vec2> points = {vec2((int)length/2, (int)length/2), vec2(-(int)length/2, (int)length/2), vec2(-(int)length/2, -(int)length/2), vec2((int)length/2, -(int)length/2)};
         return points;
         //addPoint(centre.addVec2(vec2(-length, length)));
 
     }
 };
 std::list<vec2> PointHandler::pointList;
-std::vector<renderItem> PointHandler::toRender;
+std::vector<renderItem*> PointHandler::toRender;
 
 //PointHandler::pointList = {};
 class Renderer {
@@ -146,7 +163,7 @@ class Renderer {
                 if (dr) {
                     bufferS[w] = *"-";
                 } else {
-                    bufferS[w] = *"#";
+                    bufferS[w] = *"🟩";
                 }
             }
             std::cout << bufferS << "\n";
@@ -165,8 +182,8 @@ int main() {
     //PointHandler::addTriangle(temp);
     //PointHandler::addSquare(vec2(15, 15), 4, 96);
     Renderer renderer;
-    renderItem item = renderItem(PointHandler::getSquarePoints(vec2(15, 15), 8, 0), 0, vec2(15, 15));
-    PointHandler::toRender.push_back(item);
+    renderItem item = renderItem(PointHandler::getSquarePoints(vec2(15, 15), 10), 0, vec2(15, 15));
+    PointHandler::toRender.push_back(&item);
     double rotangle = 0;
     while (true) {
 
@@ -177,6 +194,9 @@ int main() {
 
         //transformations
         rotangle += 10;
+        item.rotation = rotangle;
+        item.coordinets = vec2(25, 13);
+
 
         //PointHandler::pointList.clear();
         //PointHandler::addSquare(vec2(20, 15), 8, rotangle);

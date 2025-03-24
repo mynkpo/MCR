@@ -20,7 +20,7 @@ public:
     }
     static void addTriangle(vec2 list[3]) {
         for (int i = 0; i < 3; i++) {
-            for (int o; o < 2; o++) {
+            for (int o = 0; o < 2; o++) {
 
                 if (list[i].x == list[o].x && (list[o].y - list[i].y) != 0) {
                     for (int p = 0; p < abs(list[o].y - list[i].y); p++) {

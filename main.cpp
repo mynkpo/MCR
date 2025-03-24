@@ -7,10 +7,16 @@
 #include <cmath>
 
 #include <windows.h>
+#include <map>
+
+
 
 void setColor(int color) {
     SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
 }
+
+
+
 
 
 struct vec2 {
@@ -19,6 +25,10 @@ struct vec2 {
 
     vec2 addVec2 (vec2 add) {
         return vec2(this->x + add.x, this->y + add.y);
+    }
+
+    bool operator==(const vec2& other) const {
+        return x == other.x && y == other.y;
     }
 
 };
@@ -44,6 +54,20 @@ struct vec3f {
 
 };
 
+
+
+
+class GLOBAL_DAT {
+public:
+    static vec3 CAMPOS;
+    static vec3 CAMROT;
+};
+
+vec3 GLOBAL_DAT::CAMPOS = {0,0,0};
+vec3 GLOBAL_DAT::CAMROT = {0,0,0};
+
+
+
 struct renderItem {
     std::vector<vec2> pList;
     double rotation;
@@ -62,6 +86,8 @@ struct renderItem {
 };
 
 
+
+
 std::vector<vec2> retrieveProjectedPoints(std::vector<vec3> list, int distance) {
     std::vector<vec2> final;
     for (vec3 vec : list) {
@@ -69,6 +95,8 @@ std::vector<vec2> retrieveProjectedPoints(std::vector<vec3> list, int distance) 
     }
     return final;
 }
+
+
 
 std::vector<vec3> rotate3DPoints(std::vector<vec3> points2, vec3 rotation) {
     std::vector<vec3> points = points2; // Copy input
@@ -100,6 +128,8 @@ std::vector<vec3> rotate3DPoints(std::vector<vec3> points2, vec3 rotation) {
     return points;
 }
 
+
+
 std::vector<vec3> applyCameraTransform(std::vector<vec3> points, vec3 cameraPos, vec3 cameraAngles) {
     std::vector<vec3> final;
     vec3f caN = vec3f(cameraAngles.x * M_PI / 180.0, cameraAngles.y * M_PI / 180.0, cameraAngles.z * M_PI / 180.0);
@@ -115,6 +145,8 @@ std::vector<vec3> applyCameraTransform(std::vector<vec3> points, vec3 cameraPos,
     return final;
 }
 
+
+
 void rotatePoints(std::vector<vec2>& points, double angle) {
     double rad = angle * M_PI / 180.0; // Convert degrees to radians
     double cosTheta = cos(rad);
@@ -127,7 +159,9 @@ void rotatePoints(std::vector<vec2>& points, double angle) {
         p.x = x_new;
         p.y = y_new;
     }
-}
+};
+
+
 static std::vector<vec2> retrieveConnectionOf2Points(vec2 point1, vec2 point2) {
     if (point1.x == point2.x && point1.y == point2.y) {
         return {point1};
@@ -146,6 +180,9 @@ static std::vector<vec2> retrieveConnectionOf2Points(vec2 point1, vec2 point2) {
     return final;
 
 };
+
+
+
 static std::vector<vec2> connectAllPoints(std::vector<vec2> list) {
     std::vector<vec2> final;
     for (vec2 fVec : list) {
@@ -174,15 +211,26 @@ struct renderItem3D {
         }
         return final;
     };
-    void renderPoints(vec3 camPos, vec3 camRot, int distance) {
+    void renderPoints(vec3 camPos, vec3 camRot) {
         this->renderedPoints = connectAllPoints(retrieveProjectedPoints(applyCameraTransform(
              rotate3DPoints(recursiveAddition(this->pList, this->coordinets), this->rotation)
-             , camPos, camRot), distance));
+             , camPos, camRot),
+             sqrt((pow((this->coordinets.x - GLOBAL_DAT::CAMPOS.x), 2))
+                 +(pow((this->coordinets.y - GLOBAL_DAT::CAMPOS.z), 2))
+                 +(pow((this->coordinets.y - GLOBAL_DAT::CAMPOS.z), 2))
+                 )
+             ));
         // this->renderedPoints = retrieveProjectedPoints(applyCameraTransform(
         //     rotate3DPoints(recursiveAddition(this->pList, this->coordinets), this->rotation)
         //     , camPos, camRot), distance);
     };
 };
+
+
+
+
+
+
 
 
 class PointHandler {
@@ -211,9 +259,9 @@ public:
             addPoint(vec);
         }
     }
-    static void update3D(vec3 camPos, vec3 camRot, int distance) {
+    static void update3D(vec3 camPos, vec3 camRot) {
         for (renderItem3D* item : toRender3D) {
-            item->renderPoints(camPos, camRot, distance);
+            item->renderPoints(camPos, camRot);
             addPointList(item->renderedPoints);
         }
     }
@@ -302,9 +350,18 @@ public:
         return points;
     }
 };
+
+
+
+
 std::list<vec2> PointHandler::pointList;
 std::vector<renderItem*> PointHandler::toRender;
 std::vector<renderItem3D*> PointHandler::toRender3D;
+
+
+
+
+
 
 //PointHandler::pointList = {};
 class Renderer {
@@ -320,12 +377,7 @@ class Renderer {
             for (int w = 0; w < width; w++) {
                 bool dr = false;
                 PointHandler handler;
-                for (vec2 vec : PointHandler::pointList) {
-                    if (h == vec.y && w == vec.x) {
-                        dr = true;
-                        break;
-                    }
-                }
+                dr = std::find(PointHandler::pointList.begin(), PointHandler::pointList.end(), vec2(w, h)) != PointHandler::pointList.end();
                 if (dr) {
                     bufferS[w] = *"-";
                 } else {
@@ -337,6 +389,10 @@ class Renderer {
     }
 
 };
+
+
+
+
 
 
 
@@ -354,13 +410,12 @@ int main() {
     PointHandler::toRender3D.push_back(&item_3d);
     renderItem3D item_3d2 = renderItem3D(PointHandler::getCubePoints(vec3(0,4,0), 4), vec3(0,0,0), vec3(0, 0, 0));
     PointHandler::toRender3D.push_back(&item_3d2);
+
     //renderItem itemTest = renderItem(PointHandler::retrieveConnectionOf2Points(vec2(5, 7), vec2(8,12)), 0, vec2(5, 18));
     //PointHandler::toRender.push_back(&itemTest);
 
     double rotangle = 0;
     std::string nextMove;
-    vec3 cameraPosMod = vec3(0, 0, 0);
-    vec3 cameraRotMod = vec3(0, 0, 0);
     while (true) {
 
         // "Clearing" the console
@@ -369,25 +424,25 @@ int main() {
         // }
 
         if (nextMove == "w") {
-            cameraPosMod.z += 1;
+            GLOBAL_DAT::CAMPOS.z += 1;
         } else if (nextMove == "a") {
-            cameraPosMod.x -= 1;
+            GLOBAL_DAT::CAMPOS.x -= 1;
         } else if (nextMove == "s") {
-            cameraPosMod.z -= 1;
+            GLOBAL_DAT::CAMPOS.z -= 1;
         } else if (nextMove == "d") {
-            cameraPosMod.x += 1;
+            GLOBAL_DAT::CAMPOS.x += 1;
         } else if (nextMove == "u") {
-            cameraRotMod.x += 1;
+            GLOBAL_DAT::CAMROT.x += 1;
         } else if (nextMove == "h") {
-            cameraRotMod.y -= 1;
+            GLOBAL_DAT::CAMROT.y -= 1;
         } else if (nextMove == "j") {
-            cameraRotMod.x -= 1;
+            GLOBAL_DAT::CAMROT.x -= 1;
         } else if (nextMove == "k") {
-            cameraRotMod.y += 1;
+            GLOBAL_DAT::CAMROT.y += 1;
         } else if (nextMove == "z") {
-            cameraPosMod.y -= 1;
+            GLOBAL_DAT::CAMPOS.y -= 1;
         } else if (nextMove == "x") {
-            cameraPosMod.y += 1;
+            GLOBAL_DAT::CAMPOS.y += 1;
         } else {
             std::cout << "Dont recognize" << std::endl;
         }
@@ -410,7 +465,7 @@ int main() {
 
         //render
         PointHandler::update();
-        PointHandler::update3D(cameraPosMod, cameraRotMod, 4);
+        PointHandler::update3D(GLOBAL_DAT::CAMPOS, GLOBAL_DAT::CAMROT);
         renderer.render();
 
 

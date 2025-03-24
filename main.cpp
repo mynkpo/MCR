@@ -8,8 +8,19 @@
 
 #include <windows.h>
 #include <map>
+#include <windows.h>
 
-
+std::string getKeyPressed() {
+    for (int key = 8; key <= 255; key++) { // Loop through possible keys
+        if (GetAsyncKeyState(key) & 0x8000) { // Key is down
+            char name[128];
+            if (GetKeyNameTextA(MapVirtualKeyA(key, MAPVK_VK_TO_VSC) << 16, name, sizeof(name))) {
+                return std::string(name);
+            }
+        }
+    }
+    return "";
+}
 
 void setColor(int color) {
     SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
@@ -53,6 +64,16 @@ struct vec3f {
     }
 
 };
+struct vec3d {
+    double x;
+    double y;
+    double z;
+
+    vec3d addVec3 (vec3d add) {
+        return vec3d(this->x + add.x, this->y + add.y, this->z + add.z);
+    }
+
+};
 
 
 
@@ -60,11 +81,11 @@ struct vec3f {
 class GLOBAL_DAT {
 public:
     static vec3 CAMPOS;
-    static vec3 CAMROT;
+    static vec3d CAMROT;
 };
 
 vec3 GLOBAL_DAT::CAMPOS = {0,0,0};
-vec3 GLOBAL_DAT::CAMROT = {0,0,0};
+vec3d GLOBAL_DAT::CAMROT = {0,0,0};
 
 
 
@@ -130,15 +151,15 @@ std::vector<vec3> rotate3DPoints(std::vector<vec3> points2, vec3 rotation) {
 
 
 
-std::vector<vec3> applyCameraTransform(std::vector<vec3> points, vec3 cameraPos, vec3 cameraAngles) {
+std::vector<vec3> applyCameraTransform(std::vector<vec3> points, vec3 cameraPos, vec3d cameraAngles) {
     std::vector<vec3> final;
-    vec3f caN = vec3f(cameraAngles.x * M_PI / 180.0, cameraAngles.y * M_PI / 180.0, cameraAngles.z * M_PI / 180.0);
+    vec3d caN = vec3d(cameraAngles.x * M_PI / 180.0, cameraAngles.y * M_PI / 180.0, cameraAngles.z * M_PI / 180.0);
     for (vec3 vec : points) {
         final.push_back(
             vec3(
                 (vec.x - cameraPos.x)*(cos(caN.y) * cos(caN.z)) + (vec.y-cameraPos.y)*(cos(caN.y)*sin(caN.z)) + (vec.z - cameraPos.z)*(-sin(caN.y)),
-                (vec.x - cameraPos.x)*(sin(caN.x)*sin(caN.y)*cos(caN.z) - cos(caN.x)*sin(caN.z)) + (vec.y-cameraPos.y)*(sin(caN.x)*sin(caN.y)*sin(caN.z) + cos(caN.x)*cos(caN.z)) + (vec.z - cameraPos.z)*(sin(caN.x), cos(caN.y)),
-                (vec.x - cameraPos.x)*(cos(caN.x)*sin(caN.y)*cos(caN.z) + sin(caN.x)*sin(caN.z)) + (vec.y-cameraPos.y)*(cos(caN.x)*sin(caN.y)*sin(caN.z) - sin(caN.x)*cos(caN.z)) + (vec.z - cameraPos.z)*(cos(caN.x), cos(caN.y))
+                (vec.x - cameraPos.x)*(sin(caN.x)*sin(caN.y)*cos(caN.z) - cos(caN.x)*sin(caN.z)) + (vec.y-cameraPos.y)*(sin(caN.x)*sin(caN.y)*sin(caN.z) + cos(caN.x)*cos(caN.z)) + (vec.z - cameraPos.z)*(sin(caN.x)*cos(caN.y)),
+                (vec.x - cameraPos.x)*(cos(caN.x)*sin(caN.y)*cos(caN.z) + sin(caN.x)*sin(caN.z)) + (vec.y-cameraPos.y)*(cos(caN.x)*sin(caN.y)*sin(caN.z) - sin(caN.x)*cos(caN.z)) + (vec.z - cameraPos.z)*(cos(caN.x)*cos(caN.y))
                 )
         );
     }
@@ -182,6 +203,27 @@ static std::vector<vec2> retrieveConnectionOf2Points(vec2 point1, vec2 point2) {
 };
 
 
+static std::vector<vec3> retrieveConnectionOf2Points3D(vec3 point1, vec3 point2) {
+    if (point1.x == point2.x && point1.y == point2.y && point1.z == point2.z) {
+        return {point1};
+    }
+    std::vector<vec3> final;
+    int dX = point2.x-point1.x;
+    int dY = point2.y-point1.y;
+    int dZ = point2.z-point1.z;
+    double d = sqrt(pow(dX, 2) + pow(dY, 2) + pow(dZ, 2));
+    double sX = dX/d;
+    double sY = dY/d;
+    double sZ = dZ/d;
+    for (int i = 0; i<static_cast<int>(d); i++) {
+        final.push_back(vec3(point1.x + static_cast<int>((sX)*i),point1.y + static_cast<int>((sY)*i), point1.z + static_cast<int>((sZ)*i)));
+    }
+
+
+    return final;
+
+};
+
 
 static std::vector<vec2> connectAllPoints(std::vector<vec2> list) {
     std::vector<vec2> final;
@@ -211,7 +253,13 @@ struct renderItem3D {
         }
         return final;
     };
-    void renderPoints(vec3 camPos, vec3 camRot) {
+    double distanceReturn() {
+        return sqrt((pow((this->coordinets.x - GLOBAL_DAT::CAMPOS.x), 2))
+                 +(pow((this->coordinets.y - GLOBAL_DAT::CAMPOS.z), 2))
+                 +(pow((this->coordinets.y - GLOBAL_DAT::CAMPOS.z), 2))
+                 );
+    }
+    void renderPoints(vec3 camPos, vec3d camRot) {
         this->renderedPoints = connectAllPoints(retrieveProjectedPoints(applyCameraTransform(
              rotate3DPoints(recursiveAddition(this->pList, this->coordinets), this->rotation)
              , camPos, camRot),
@@ -227,6 +275,101 @@ struct renderItem3D {
 };
 
 
+struct cubeItem3D {
+    vec3 rotation;
+    vec3 coordinets;
+    std::vector<vec2> renderedPoints;
+    std::vector<vec3> listP;
+
+
+    vec3 bclP;
+    vec3 bcrP;
+    vec3 bflP;
+    vec3 bfrP;
+    vec3 tclP;
+    vec3 tcrP;
+    vec3 tflP;
+    vec3 tfrP;
+
+
+    cubeItem3D(int length, vec3 rot, vec3 coords) {
+        bclP = {length + coords.x, length + coords.y, length + coords.z};
+        bcrP = {-length + coords.x, length + coords.y, length + coords.z};
+        bflP = {-length + coords.x, -length + coords.y, length + coords.z};
+        bfrP = {-length + coords.x, -length + coords.y, -length + coords.z};
+        tclP = {length + coords.x, -length + coords.y, -length + coords.z};
+        tcrP = {length + coords.x, length + coords.y, -length + coords.z};
+        tflP = {-length + coords.x, length + coords.y, -length + coords.z};
+        tfrP = {length + coords.x, -length + coords.y, length + coords.z};
+        this->coordinets = coords;
+        this->rotation = rot;
+    }
+    std::vector<vec3> recursiveAddition(std::vector<vec3> first, vec3 addition) {
+        std::vector<vec3> final;
+        for (vec3 vec: first) {
+            final.push_back(vec.addVec3(addition));
+        }
+        return final;
+    };
+    double distanceReturn() {
+        return sqrt((pow((this->coordinets.x - GLOBAL_DAT::CAMPOS.x), 2))
+                 +(pow((this->coordinets.y - GLOBAL_DAT::CAMPOS.z), 2))
+                 +(pow((this->coordinets.y - GLOBAL_DAT::CAMPOS.z), 2))
+                 );
+    }
+
+    void renderPoints(vec3 camPos, vec3d camRot) {
+        std::vector<vec3> points = {bclP,
+                                    bcrP,
+                                    bflP,
+                                    bfrP,
+                                    tclP,
+                                    tcrP,
+                                    tflP,
+                                    tfrP};
+        std::vector<vec3> final;
+        for (vec3 vec : points) {
+            for (vec3 sVec : points) {
+                for (vec3 fVec : points) {
+                    if ((vec.x == sVec.x)) {
+                        std::vector<vec3> temp = retrieveConnectionOf2Points3D(vec, sVec);
+                        final.insert(final.end(), temp.begin(), temp.end());
+                    } else if ((vec.x == fVec.x)) {
+                        std::vector<vec3> temp = retrieveConnectionOf2Points3D(vec, fVec);
+                        final.insert(final.end(), temp.begin(), temp.end());
+                    } else if ((fVec.x == sVec.x)) {
+                        std::vector<vec3> temp = retrieveConnectionOf2Points3D(fVec, sVec);
+                        final.insert(final.end(), temp.begin(), temp.end());
+                    } else if ((vec.y == sVec.y)) {
+                        std::vector<vec3> temp = retrieveConnectionOf2Points3D(vec, sVec);
+                        final.insert(final.end(), temp.begin(), temp.end());
+                    } else if ((vec.y == fVec.y)) {
+                        std::vector<vec3> temp = retrieveConnectionOf2Points3D(vec, fVec);
+                        final.insert(final.end(), temp.begin(), temp.end());
+                    } else if ((fVec.y == sVec.y)) {
+                        std::vector<vec3> temp = retrieveConnectionOf2Points3D(fVec, sVec);
+                        final.insert(final.end(), temp.begin(), temp.end());
+                    } else if ((vec.z == sVec.z)) {
+                        std::vector<vec3> temp = retrieveConnectionOf2Points3D(vec, sVec);
+                        final.insert(final.end(), temp.begin(), temp.end());
+                    } else if ((vec.z == fVec.z)) {
+                        std::vector<vec3> temp = retrieveConnectionOf2Points3D(vec, fVec);
+                        final.insert(final.end(), temp.begin(), temp.end());
+                    } else if ((fVec.z == sVec.z)) {
+                        std::vector<vec3> temp = retrieveConnectionOf2Points3D(fVec, sVec);
+                        final.insert(final.end(), temp.begin(), temp.end());
+                    }
+                 }
+            }
+        }
+
+        this->listP = final;
+        this->renderedPoints = retrieveProjectedPoints(applyCameraTransform(rotate3DPoints(final,this->rotation), camPos, camRot), distanceReturn());
+        // this->renderedPoints = retrieveProjectedPoints(applyCameraTransform(
+        //     rotate3DPoints(recursiveAddition(this->pList, this->coordinets), this->rotation)
+        //     , camPos, camRot), distance);
+    };
+};
 
 
 
@@ -238,6 +381,7 @@ public:
     static std::list<vec2> pointList;
     static std::vector<renderItem*> toRender;
     static std::vector<renderItem3D*> toRender3D;
+    static std::vector<cubeItem3D*> toRenderCube3D;
     static void addPoint(vec2 vector) {
         pointList.push_back(vector);
     }
@@ -259,8 +403,12 @@ public:
             addPoint(vec);
         }
     }
-    static void update3D(vec3 camPos, vec3 camRot) {
+    static void update3D(vec3 camPos, vec3d camRot) {
         for (renderItem3D* item : toRender3D) {
+            item->renderPoints(camPos, camRot);
+            addPointList(item->renderedPoints);
+        }
+        for (cubeItem3D* item : toRenderCube3D) {
             item->renderPoints(camPos, camRot);
             addPointList(item->renderedPoints);
         }
@@ -357,6 +505,7 @@ public:
 std::list<vec2> PointHandler::pointList;
 std::vector<renderItem*> PointHandler::toRender;
 std::vector<renderItem3D*> PointHandler::toRender3D;
+std::vector<cubeItem3D*> PointHandler::toRenderCube3D;
 
 
 
@@ -406,10 +555,15 @@ int main() {
     Renderer renderer;
     //renderItem item = renderItem(retrieveProjectedPoints(rotate3DPoints(PointHandler::getCubePoints(vec3(0, 0 ,0), 5), vec3(0, 0, 0)), 3), 0, vec2(15, 15));
     //PointHandler::toRender.push_back(&item);
-    renderItem3D item_3d = renderItem3D(PointHandler::getCubePoints(vec3(0,0,0), 4), vec3(0,0,0), vec3(0, 0, 0));
-    PointHandler::toRender3D.push_back(&item_3d);
-    renderItem3D item_3d2 = renderItem3D(PointHandler::getCubePoints(vec3(0,4,0), 4), vec3(0,0,0), vec3(0, 0, 0));
-    PointHandler::toRender3D.push_back(&item_3d2);
+    // renderItem3D item_3d = renderItem3D(PointHandler::getCubePoints(vec3(0,0,0), 4), vec3(0,0,0), vec3(0, 0, 0));
+    // PointHandler::toRender3D.push_back(&item_3d);
+    // renderItem3D item_3d2 = renderItem3D(PointHandler::getCubePoints(vec3(0,4,0), 4), vec3(0,0,0), vec3(0, 0, 0));
+    // PointHandler::toRender3D.push_back(&item_3d2);
+    renderItem3D item_3d3 = renderItem3D(PointHandler::getCubePoints(vec3(5,4,0), 4), vec3(0,0,0), vec3(0, 0, 0));
+    PointHandler::toRender3D.push_back(&item_3d3);
+    //
+    // cubeItem3D cube = cubeItem3D(4, vec3(0,0,0), vec3(0,0,0));
+    // PointHandler::toRenderCube3D.push_back(&cube);
 
     //renderItem itemTest = renderItem(PointHandler::retrieveConnectionOf2Points(vec2(5, 7), vec2(8,12)), 0, vec2(5, 18));
     //PointHandler::toRender.push_back(&itemTest);
@@ -423,31 +577,33 @@ int main() {
         //     std::cout << "\n";
         // }
 
-        if (nextMove == "w") {
+        if (nextMove == "W") {
             GLOBAL_DAT::CAMPOS.z += 1;
-        } else if (nextMove == "a") {
+        } else if (nextMove == "A") {
             GLOBAL_DAT::CAMPOS.x -= 1;
-        } else if (nextMove == "s") {
+        } else if (nextMove == "S") {
             GLOBAL_DAT::CAMPOS.z -= 1;
-        } else if (nextMove == "d") {
+        } else if (nextMove == "D") {
             GLOBAL_DAT::CAMPOS.x += 1;
-        } else if (nextMove == "u") {
+        } else if (nextMove == "U") {
             GLOBAL_DAT::CAMROT.x += 1;
-        } else if (nextMove == "h") {
+        } else if (nextMove == "H") {
             GLOBAL_DAT::CAMROT.y -= 1;
-        } else if (nextMove == "j") {
+        } else if (nextMove == "J") {
             GLOBAL_DAT::CAMROT.x -= 1;
-        } else if (nextMove == "k") {
+        } else if (nextMove == "K") {
             GLOBAL_DAT::CAMROT.y += 1;
-        } else if (nextMove == "z") {
+        } else if (nextMove == "Z") {
             GLOBAL_DAT::CAMPOS.y -= 1;
-        } else if (nextMove == "x") {
+        } else if (nextMove == "X") {
             GLOBAL_DAT::CAMPOS.y += 1;
+        } else if (nextMove == "C") {
+            GLOBAL_DAT::CAMPOS.z += 1;
         } else {
-            std::cout << "Dont recognize" << std::endl;
+            std::cout << "Dont recognize - " << nextMove << std::endl;
         }
         //transformations
-        rotangle += 8;
+        rotangle += 4;
 
 
 
@@ -462,15 +618,15 @@ int main() {
         //PointHandler::addSquare(vec2(20, 15), 8, rotangle);
 
 
+        Sleep(100);
 
         //render
+        nextMove = getKeyPressed();
+        system("cls");
         PointHandler::update();
         PointHandler::update3D(GLOBAL_DAT::CAMPOS, GLOBAL_DAT::CAMROT);
         renderer.render();
 
-
-        std::cin >> nextMove;
-        system("cls");
     }
 
 

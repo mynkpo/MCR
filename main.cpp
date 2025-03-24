@@ -17,6 +17,17 @@ struct vec2 {
 
 };
 
+struct vec3 {
+    int x;
+    int y;
+    int z;
+
+    vec3 addVec3 (vec3 add) {
+        return vec3(this->x + add.x, this->y + add.y, this->z + add.z);
+    }
+
+};
+
 struct renderItem {
     std::vector<vec2> pList;
     double rotation;
@@ -33,6 +44,44 @@ struct renderItem {
         this->coordinets = pos;
     }
 };
+
+std::vector<vec2> retrieveProjectedPoints(std::vector<vec3> list, int distance) {
+    std::vector<vec2> final;
+    for (vec3 vec : list) {
+        final.push_back(vec2((vec.x * distance)/ std::clamp(vec.z, 1, 1000), (vec.y * distance)/ std::clamp(vec.z, 1, 1000)));
+    }
+    return final;
+}
+
+std::vector<vec3> rotate3DPoints(std::vector<vec3> points2, vec3 rotation) {
+    std::vector<vec3> points = points2; // Copy input
+
+    double radX = rotation.x * M_PI / 180.0;
+    double radY = rotation.y * M_PI / 180.0;
+    double radZ = rotation.z * M_PI / 180.0;
+
+    for (vec3 &point : points) {  // Loop by reference to modify original values
+
+        // Rotate around X-axis
+        double y1 = point.y * cos(radX) - point.z * sin(radX);
+        double z1 = point.y * sin(radX) + point.z * cos(radX);
+
+        // Rotate around Y-axis
+        double x2 = point.x * cos(radY) + z1 * sin(radY);
+        double z2 = -point.x * sin(radY) + z1 * cos(radY);
+
+        // Rotate around Z-axis
+        double x3 = x2 * cos(radZ) - y1 * sin(radZ);
+        double y3 = x2 * sin(radZ) + y1 * cos(radZ);
+
+        // Store final values
+        point.x = x3;
+        point.y = y3;
+        point.z = z2;
+    }
+
+    return points;
+}
 
 void rotatePoints(std::vector<vec2>& points, double angle) {
     double rad = angle * M_PI / 180.0; // Convert degrees to radians
@@ -136,6 +185,20 @@ public:
         //addPoint(centre.addVec2(vec2(-length, length)));
 
     }
+
+    static std::vector<vec3> getCubePoints(vec3 centre, int sideLength) {
+        std::vector<vec3> points = {
+            vec3(-sideLength/2 + centre.x, sideLength/2 + centre.y, sideLength/2 + centre.z),
+            vec3(-sideLength/2  + centre.x, -sideLength/2 + centre.y, sideLength/2 + centre.z),
+            vec3(-sideLength/2  + centre.x, -sideLength/2 + centre.y, -sideLength/2 + centre.z),
+            vec3(sideLength/2  + centre.x, -sideLength/2 + centre.y, -sideLength/2 + centre.z),
+            vec3(sideLength/2  + centre.x, sideLength/2 + centre.y, -sideLength/2 + centre.z),
+            vec3(sideLength/2  + centre.x, -sideLength/2 + centre.y, sideLength/2 + centre.z),
+            vec3(-sideLength/2  + centre.x, sideLength/2 + centre.y, -sideLength/2 + centre.z),
+            vec3(sideLength/2  + centre.x, sideLength/2 + centre.y, sideLength/2 + centre.z),
+        };
+        return points;
+    }
 };
 std::list<vec2> PointHandler::pointList;
 std::vector<renderItem*> PointHandler::toRender;
@@ -182,7 +245,7 @@ int main() {
     //PointHandler::addTriangle(temp);
     //PointHandler::addSquare(vec2(15, 15), 4, 96);
     Renderer renderer;
-    renderItem item = renderItem(PointHandler::getSquarePoints(vec2(15, 15), 10), 0, vec2(15, 15));
+    renderItem item = renderItem(retrieveProjectedPoints(rotate3DPoints(PointHandler::getCubePoints(vec3(0, 0 ,0), 5), vec3(0, 0, 0)), 3), 0, vec2(15, 15));
     PointHandler::toRender.push_back(&item);
     double rotangle = 0;
     while (true) {
@@ -193,9 +256,10 @@ int main() {
         }
 
         //transformations
-        rotangle += 10;
-        item.rotation = rotangle;
-        item.coordinets = vec2(25, 13);
+        rotangle += 1;
+        //item.rotation = rotangle;
+        //item.coordinets = vec2(25, 13);
+        item.pList = retrieveProjectedPoints(rotate3DPoints(PointHandler::getCubePoints(vec3(0, 0 ,0), 4), vec3(4, rotangle, 0)), 2);
 
 
         //PointHandler::pointList.clear();

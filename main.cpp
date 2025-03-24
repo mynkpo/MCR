@@ -10,6 +10,10 @@
 struct vec2 {
     int x;
     int y;
+
+    vec2 addVec2 (vec2 add) {
+        return vec2(this->x + add.x, this->y + add.y);
+    }
 };
 
 class PointHandler {
@@ -17,6 +21,16 @@ public:
     static std::list<vec2> pointList;
     static void addPoint(vec2 vector) {
         pointList.push_back(vector);
+    }
+    static void addSquare(vec2 centre, int length) {
+        if (length % 2 != 0) {
+            length += 1;
+        }
+        addPoint(centre.addVec2(vec2(length, length)));
+        addPoint(centre.addVec2(vec2(length, -length)));
+        addPoint(centre.addVec2(vec2(-length, -length)));
+        addPoint(centre.addVec2(vec2(-length, length)));
+
     }
     static void addTriangle(vec2 list[3]) {
         for (int i = 0; i < 3; i++) {
@@ -121,10 +135,11 @@ class Renderer {
 
 int main() {
 
-    vec2 temp[3] = {vec2(4, 6), vec2(12, 5), vec2(20, 16)};
-    PointHandler::addTriangle(temp);
+    vec2 temp[3] = {vec2(4, 16), vec2(4, 16), vec2(4, 5)};
+    //PointHandler::addTriangle(temp);
     Renderer renderer;
 
+    PointHandler::addSquare(vec2(15, 15), 8);
 
     while (true) {
         for (int i = 0; i < renderer.height*5; i++) {

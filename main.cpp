@@ -6,6 +6,12 @@
 #include <list>
 #include <cmath>
 
+#include <windows.h>
+
+void setColor(int color) {
+    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
+}
+
 
 struct vec2 {
     int x;
@@ -127,28 +133,15 @@ static std::vector<vec2> retrieveConnectionOf2Points(vec2 point1, vec2 point2) {
         return {point1};
     }
     std::vector<vec2> final;
-    if (point1.x == point2.x) {
-        for (int i = 0; i < point2.y-point1.y; i += (point2.y-point1.y)/abs(point2.y-point1.y)) {
-            final.push_back(vec2(point1.x, point1.y + i));
-        }
+    int dX = point2.x-point1.x;
+    int dY = point2.y-point1.y;
+    double d = sqrt(pow(dX, 2) + pow(dY, 2));
+    double sX = dX/d;
+    double sY = dY/d;
+    for (int i = 0; i<static_cast<int>(d); i++) {
+        final.push_back(vec2(point1.x + static_cast<int>((sX)*i),point1.y + static_cast<int>((sY)*i)));
     }
-    if (point1.y == point2.y) {
-        for (int i = 0; i < point2.x-point1.x; i += (point2.x-point1.x)/abs(point2.x-point1.x)) {
-            final.push_back(vec2(point1.x + i, point1.y));
-        }
-    }
-    int yDiff = point1.y-point2.y;
-    int xDiff = point1.x-point2.x;
-    if (xDiff != 0 && yDiff != 0) {
-        double slope = yDiff/std::clamp(xDiff, 1, 100);
-        double yAccum = 0;
-        double xAccum = 0;
 
-        for (int i = 0; i < xDiff; i += xDiff/abs(xDiff)) {
-            yAccum += slope*i;
-            final.push_back(vec2(i + point1.x, ((int)yAccum) + point1.y));
-        }
-    }
 
     return final;
 

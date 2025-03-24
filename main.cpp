@@ -21,22 +21,32 @@ public:
     static void addTriangle(vec2 list[4]) {
         for (int i = 0; i < 4; i++) {
             for (int o = 0; o < 4; o++) {
-                if (i == o) {
-                    continue;
-                }
-                int heightDif = list[o].y - list[i].y;
-                int lengthDif = list[o].x - list[i].x;
-                double divisor = lengthDif/std::clamp(heightDif, 1, 100);
-                int almostFinal = divisor;
-                int final = ceil(divisor);
-                int currentY = list[i].y;
-                int currentX = list[i].x;
-                for (int p = 0; p < (int)abs(lengthDif/std::clamp(almostFinal, 1, 100)); p++) {
-                    for (int p2 = 0; p2 < almostFinal; p2++) {
-                        currentX += lengthDif/std::clamp(abs(lengthDif), 1, 100);
-                        pointList.push_back(vec2(currentX, currentY));
+                if (list[i].x == list[o].x && list[o].y != list[i].y) {
+                    for (int p = 0; p < abs(list[o].y - list[i].y); p++) {
+                        addPoint(vec2(list[i].x, list[i].y + p*((list[o].y - list[i].y)/abs(list[o].y - list[i].y))));
                     }
-                    currentY += heightDif/std::clamp(abs(heightDif), 1, 100);
+                } else if (list[i].y == list[o].y && list[o].x != list[i].x) {
+                    for (int p = 0; p < abs(list[o].x - list[i].x); p++) {
+                        addPoint(vec2(list[i].x +p*((list[o].x - list[i].x)/abs(list[o].x - list[i].x)), list[i].y));
+                    }
+                } else {
+                    if (i == o) {
+                        continue;
+                    }
+                    int heightDif = list[o].y - list[i].y;
+                    int lengthDif = list[o].x - list[i].x;
+                    double divisor = lengthDif/std::clamp(heightDif, 1, 100);
+                    int almostFinal = divisor;
+                    int final = ceil(divisor);
+                    int currentY = list[i].y;
+                    int currentX = list[i].x;
+                    for (int p = 0; p < (int)abs(lengthDif/std::clamp(almostFinal, 1, 100)); p++) {
+                        for (int p2 = 0; p2 < almostFinal; p2++) {
+                            currentX += lengthDif/std::clamp(abs(lengthDif), 1, 100);
+                            pointList.push_back(vec2(currentX, currentY));
+                        }
+                        currentY += heightDif/std::clamp(abs(heightDif), 1, 100);
+                    }
                 }
 
             }

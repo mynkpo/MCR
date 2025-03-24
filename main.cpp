@@ -27,6 +27,16 @@ struct vec3 {
     }
 
 };
+struct vec3f {
+    float x;
+    float y;
+    float z;
+
+    vec3f addVec3 (vec3f add) {
+        return vec3f(this->x + add.x, this->y + add.y, this->z + add.z);
+    }
+
+};
 
 struct renderItem {
     std::vector<vec2> pList;
@@ -85,7 +95,7 @@ std::vector<vec3> rotate3DPoints(std::vector<vec3> points2, vec3 rotation) {
 
 std::vector<vec3> applyCameraTransform(std::vector<vec3> points, vec3 cameraPos, vec3 cameraAngles) {
     std::vector<vec3> final;
-    vec3 caN = vec3(cameraAngles.x * M_PI / 180.0, cameraAngles.y * M_PI / 180.0, cameraAngles.z * M_PI / 180.0);
+    vec3f caN = vec3f(cameraAngles.x * M_PI / 180.0, cameraAngles.y * M_PI / 180.0, cameraAngles.z * M_PI / 180.0);
     for (vec3 vec : points) {
         final.push_back(
             vec3(
@@ -263,6 +273,9 @@ int main() {
     renderItem item = renderItem(retrieveProjectedPoints(rotate3DPoints(PointHandler::getCubePoints(vec3(0, 0 ,0), 5), vec3(0, 0, 0)), 3), 0, vec2(15, 15));
     PointHandler::toRender.push_back(&item);
     double rotangle = 0;
+    std::string nextMove;
+    vec3 cameraPosMod = vec3(0, 0, 0);
+    vec3 cameraRotMod = vec3(0, 0, 0);
     while (true) {
 
         // "Clearing" the console
@@ -270,13 +283,32 @@ int main() {
         //     std::cout << "\n";
         // }
 
+        if (nextMove == "w") {
+            cameraPosMod.z += 1;
+        } else if (nextMove == "a") {
+            cameraPosMod.x -= 1;
+        } else if (nextMove == "s") {
+            cameraPosMod.z -= 1;
+        } else if (nextMove == "d") {
+            cameraPosMod.x += 1;
+        } else if (nextMove == "u") {
+            cameraRotMod.x += 1;
+        } else if (nextMove == "h") {
+            cameraRotMod.y -= 1;
+        } else if (nextMove == "j") {
+            cameraRotMod.x -= 1;
+        } else if (nextMove == "k") {
+            cameraRotMod.y += 1;
+        } else {
+            std::cout << "Dont recognize" << std::endl;
+        }
         //transformations
-        rotangle += 1;
+        rotangle += 8;
         //item.rotation = rotangle;
         //item.coordinets = vec2(25, 13);
         item.pList = retrieveProjectedPoints(applyCameraTransform(
-            rotate3DPoints(PointHandler::getCubePoints(vec3(45, 0 ,0), 4), vec3(0, 0, 0))
-            , vec3(-15, 0, -32), vec3(0,0,0)), 9);
+            rotate3DPoints(PointHandler::getCubePoints(vec3(0, 0 ,0), 4), vec3(0, 0, 0))
+            , cameraPosMod, cameraRotMod), 6);
 
 
         //PointHandler::pointList.clear();
@@ -289,11 +321,7 @@ int main() {
         renderer.render();
 
 
-
-        using namespace std::chrono_literals;
-        const auto start = std::chrono::high_resolution_clock::now();
-        std::this_thread::sleep_for(100ms);
-        const auto end = std::chrono::high_resolution_clock::now();
+        std::cin >> nextMove;
         system("cls");
     }
 

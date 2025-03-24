@@ -10,13 +10,56 @@
 struct vec2 {
     int x;
     int y;
+
+    vec2 addVec2 (vec2 add) {
+        return vec2(this->x + add.x, this->y + add.y);
+    }
+
 };
 
+class renderItem {
+    public:
+    std::vector<vec2> pList;
+    double rotation;
+    vec2 coordinets;
+    renderItem(std::vector<vec2> list, double rot, vec2 coords) {
+        this->pList = list;
+        this->coordinets = coords;
+        this->rotation = rot;
+    }
+};
+
+void rotatePoints(std::vector<vec2>& points, double angle) {
+    double rad = angle * M_PI / 180.0; // Convert degrees to radians
+    double cosTheta = cos(rad);
+    double sinTheta = sin(rad);
+
+    for (auto& p : points) {
+        double x_new = p.x * cosTheta - p.y * sinTheta;
+        double y_new = p.x * sinTheta + p.y * cosTheta;
+
+        p.x = x_new;
+        p.y = y_new;
+    }
+}
 class PointHandler {
 public:
     static std::list<vec2> pointList;
+    static std::vector<renderItem> toRender;
     static void addPoint(vec2 vector) {
         pointList.push_back(vector);
+    }
+    static void update() {
+        pointList.clear();
+        for (renderItem item : toRender) {
+
+            std::vector<vec2> transformedVec = item.pList;
+            rotatePoints(transformedVec, item.rotation);
+
+            for (vec2 vec : transformedVec) {
+                addPoint(vec.addVec2(item.coordinets));
+            }
+        }
     }
     static void addTriangle(vec2 list[4]) {
         for (int i = 0; i < 4; i++) {
@@ -52,8 +95,34 @@ public:
             }
         }
     }
+    static void addSquare(vec2 centre, int length, double rotation) {
+        if (length % 2 != 0) {
+            length += 1;
+        }
+        std::vector<vec2>points = {vec2(length, length), vec2(-length, length), vec2(-length, -length), vec2(length, -length)};
+
+        rotatePoints(points, rotation);
+
+        for (vec2 vec : points) {
+            addPoint(centre.addVec2(vec));
+        }
+        //addPoint(centre.addVec2(vec2(-length, length)));
+
+    }
+
+    static std::vector<vec2> getSquarePoints(vec2 centre, int length, double rotation) {
+        if (length % 2 != 0) {
+            length += 1;
+        }
+        std::vector<vec2> points = {vec2((int)length/2, (int)length/2), vec2(-(int)length/2, (int)length/2), vec2(-(int)length/2, -(int)length/2), vec2((int)length/2, -(int)length/2)};
+        return points;
+        //addPoint(centre.addVec2(vec2(-length, length)));
+
+    }
 };
 std::list<vec2> PointHandler::pointList;
+std::vector<renderItem> PointHandler::toRender;
+
 //PointHandler::pointList = {};
 class Renderer {
 
@@ -92,19 +161,37 @@ class Renderer {
 
 int main() {
 
-    vec2 temp[4] = {vec2(4, 20), vec2(20, 20), vec2(4, 4), vec2(20, 4)};
-    PointHandler::addTriangle(temp);
+    //vec2 temp[4] = {vec2(4, 20), vec2(20, 20), vec2(4, 4), vec2(20, 4)};
+    //PointHandler::addTriangle(temp);
+    //PointHandler::addSquare(vec2(15, 15), 4, 96);
     Renderer renderer;
-
-
+    renderItem item = renderItem(PointHandler::getSquarePoints(vec2(15, 15), 8, 0), 0, vec2(15, 15));
+    PointHandler::toRender.push_back(item);
+    double rotangle = 0;
     while (true) {
+
+        // "Clearing" the console
         for (int i = 0; i < renderer.height*5; i++) {
             std::cout << "\n";
         }
+
+        //transformations
+        rotangle += 10;
+
+        //PointHandler::pointList.clear();
+        //PointHandler::addSquare(vec2(20, 15), 8, rotangle);
+
+
+
+        //render
+        PointHandler::update();
         renderer.render();
+
+
+
         using namespace std::chrono_literals;
         const auto start = std::chrono::high_resolution_clock::now();
-        std::this_thread::sleep_for(500ms);
+        std::this_thread::sleep_for(100ms);
         const auto end = std::chrono::high_resolution_clock::now();
 
     }

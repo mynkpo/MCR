@@ -18,22 +18,25 @@ public:
     static void addPoint(vec2 vector) {
         pointList.push_back(vector);
     }
-    static void addTriangle(vec2 list[3]) {
-        for (int i = 0; i < 3; i++) {
-            for (int o; o < 3; o++) {
+    static void addTriangle(vec2 list[4]) {
+        for (int i = 0; i < 4; i++) {
+            for (int o = 0; o < 4; o++) {
+                if (i == o) {
+                    continue;
+                }
                 int heightDif = list[o].y - list[i].y;
                 int lengthDif = list[o].x - list[i].x;
-                double divisor = lengthDif/heightDif;
+                double divisor = lengthDif/std::clamp(heightDif, 1, 100);
                 int almostFinal = divisor;
                 int final = ceil(divisor);
                 int currentY = list[i].y;
                 int currentX = list[i].x;
-                for (int p = 0; p < (int)lengthDif/almostFinal; p++) {
+                for (int p = 0; p < (int)abs(lengthDif/std::clamp(almostFinal, 1, 100)); p++) {
                     for (int p2 = 0; p2 < almostFinal; p2++) {
-                        currentX += lengthDif/abs(lengthDif);
+                        currentX += lengthDif/std::clamp(abs(lengthDif), 1, 100);
                         pointList.push_back(vec2(currentX, currentY));
                     }
-                    currentY += heightDif/abs(heightDif);
+                    currentY += heightDif/std::clamp(abs(heightDif), 1, 100);
                 }
 
             }
@@ -79,7 +82,7 @@ class Renderer {
 
 int main() {
 
-    vec2 temp[3] = {vec2(4, 3), vec2(7, 5), vec2(12, 6)};
+    vec2 temp[4] = {vec2(4, 20), vec2(20, 20), vec2(4, 4), vec2(20, 4)};
     PointHandler::addTriangle(temp);
     Renderer renderer;
 

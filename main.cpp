@@ -20,18 +20,63 @@ public:
     }
     static void addTriangle(vec2 list[3]) {
         for (int i = 0; i < 3; i++) {
-            for (int o = 0; o < 2; o++) {
+            for (int o = 0; o < 3; o++) {
+                if (i == o) {
+                    continue;
+                }
 
                 if (list[i].x == list[o].x && (list[o].y - list[i].y) != 0) {
                     for (int p = 0; p < abs(list[o].y - list[i].y); p++) {
                         addPoint(vec2(list[i].x, p*((list[o].y - list[i].y)/abs(list[o].y - list[i].y))));
                     }
-                }
-                if (list[i].y == list[o].y && (list[o].x - list[i].x) != 0) {
+                } else if (list[i].y == list[o].y && (list[o].x - list[i].x) != 0) {
                     for (int p = 0; p < abs(list[o].x - list[i].x); p++) {
                         addPoint(vec2(list[i].y, p*((list[o].x - list[i].x)/abs(list[o].x - list[i].x))));
                     }
+                } else {
+
+                    int startX = list[i].x;
+                    int startY = list[i].y;
+                    int endX = list[o].x;
+                    int endY = list[o].y;
+                    int diffX = endX-startX;
+                    int diffY = endY-startY;
+                    if (diffX != 0 && diffY != 0) {
+                        int modX = diffX/abs(diffX);
+                        int modY = diffY/abs(diffY);
+                        //is div/0? We will see :) YAYAYYAYAYAYAYYAY GOLDENN BUZZER DEVIDED BY ZERO PLEAS HELPPPPP
+                        int ndiffX = abs(endX-startX);
+                        int ndiffY = abs(endY-startY);
+
+                        int hypotenous = sqrt(pow(ndiffX, 2) + pow(ndiffY, 2));
+                        if (ndiffX < ndiffY) {
+                            int diff = hypotenous/std::clamp(diffX, 1, 100);
+                            int times = abs(hypotenous/std::clamp(diff, 1, 100));
+                            int currentX = startX;
+                            for (int b = 0; b < times; b++) {
+                                int currentY = diffY/std::clamp(b, 1, 100);
+                                for (int g = 0; g < diff; g++) {
+                                    currentX += 1;
+                                    addPoint(vec2(currentX, currentY));
+                                }
+                            }
+                        } else {
+                            int diff = hypotenous/std::clamp(diffY, 1, 100);
+                            int times = abs(hypotenous/std::clamp(diff, 1, 100));
+                            int currentX = startX;
+                            for (int b = 1; b < times+1; b++) {
+                                int currentY = diffY/std::clamp(b, 1, 100);
+                                for (int g = 1; g < diff+1; g++) {
+                                    currentX += 1;
+                                    addPoint(vec2(currentX, currentY));
+                                }
+                            }
+                        }
+                    }
+
+
                 }
+
 
             }
         }
@@ -76,7 +121,7 @@ class Renderer {
 
 int main() {
 
-    vec2 temp[3] = {vec2(4, 3), vec2(4, 2), vec2(12, 5)};
+    vec2 temp[3] = {vec2(4, 6), vec2(12, 5), vec2(20, 16)};
     PointHandler::addTriangle(temp);
     Renderer renderer;
 

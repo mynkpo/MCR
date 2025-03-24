@@ -1,25 +1,100 @@
 #include <iostream>
+#include <cstdlib>
+#include <thread>
+#include <chrono> // std::chrono::microseconds
+#include <thread> // std::this_thread::sleep_for
+#include <list>
+#include <cmath>
 
-// TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
-// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
-int main() {
-    // TIP Press <shortcut actionId="RenameElement"/> when your caret is at the
-    // <b>lang</b> variable name to see how CLion can help you rename it.
-    auto lang = "C++";
-    std::cout << "Hello and welcome to " << lang << "!\n";
 
-    for (int i = 1; i <= 5; i++) {
-        // TIP Press <shortcut actionId="Debug"/> to start debugging your code.
-        // We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/>
-        // breakpoint for you, but you can always add more by pressing
-        // <shortcut actionId="ToggleLineBreakpoint"/>.
-        std::cout << "i = " << i << std::endl;
+struct vec2 {
+    int x;
+    int y;
+};
+
+class PointHandler {
+public:
+    static std::list<vec2> pointList;
+    static void addPoint(vec2 vector) {
+        pointList.push_back(vector);
+    }
+    static void addTriangle(vec2 list[3]) {
+        for (int i = 0; i < 3; i++) {
+            for (int o; o < 3; o++) {
+                int heightDif = list[o].y - list[i].y;
+                int lengthDif = list[o].x - list[i].x;
+                double divisor = lengthDif/heightDif;
+                int almostFinal = divisor;
+                int final = ceil(divisor);
+                int currentY = list[i].y;
+                int currentX = list[i].x;
+                for (int p = 0; p < (int)lengthDif/almostFinal; p++) {
+                    for (int p2 = 0; p2 < almostFinal; p2++) {
+                        currentX += lengthDif/abs(lengthDif);
+                        pointList.push_back(vec2(currentX, currentY));
+                    }
+                    currentY += heightDif/abs(heightDif);
+                }
+
+            }
+        }
+    }
+};
+std::list<vec2> PointHandler::pointList;
+//PointHandler::pointList = {};
+class Renderer {
+
+    public:
+
+    const int width = 100;
+    const int height = width * 0.2625;
+
+    void render() {
+        for (int h = 0; h < height; h++) {
+            char bufferS[width];
+            for (int w = 0; w < width; w++) {
+                bool dr = false;
+                PointHandler handler;
+                for (vec2 vec : PointHandler::pointList) {
+                    if (h == vec.y && w == vec.x) {
+                        dr = true;
+                        break;
+                    }
+                }
+                if (dr) {
+                    bufferS[w] = *"-";
+                } else {
+                    bufferS[w] = *"#";
+                }
+            }
+            std::cout << bufferS << "\n";
+        }
     }
 
-    return 0;
-}
+};
 
-// TIP See CLion help at <a
-// href="https://www.jetbrains.com/help/clion/">jetbrains.com/help/clion/</a>.
-//  Also, you can try interactive lessons for CLion by selecting
-//  'Help | Learn IDE Features' from the main menu.
+
+
+
+
+int main() {
+
+    vec2 temp[3] = {vec2(4, 3), vec2(7, 5), vec2(12, 6)};
+    PointHandler::addTriangle(temp);
+    Renderer renderer;
+
+
+    while (true) {
+        for (int i = 0; i < renderer.height*5; i++) {
+            std::cout << "\n";
+        }
+        renderer.render();
+        using namespace std::chrono_literals;
+        const auto start = std::chrono::high_resolution_clock::now();
+        std::this_thread::sleep_for(500ms);
+        const auto end = std::chrono::high_resolution_clock::now();
+
+    }
+
+
+}

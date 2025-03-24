@@ -55,6 +55,7 @@ struct renderItem {
     }
 };
 
+
 std::vector<vec2> retrieveProjectedPoints(std::vector<vec3> list, int distance) {
     std::vector<vec2> final;
     for (vec3 vec : list) {
@@ -121,10 +122,81 @@ void rotatePoints(std::vector<vec2>& points, double angle) {
         p.y = y_new;
     }
 }
+static std::vector<vec2> retrieveConnectionOf2Points(vec2 point1, vec2 point2) {
+    if (point1.x == point2.x && point1.y == point2.y) {
+        return {point1};
+    }
+    std::vector<vec2> final;
+    if (point1.x == point2.x) {
+        for (int i = 0; i < point2.y-point1.y; i += (point2.y-point1.y)/abs(point2.y-point1.y)) {
+            final.push_back(vec2(point1.x, point1.y + i));
+        }
+    }
+    if (point1.y == point2.y) {
+        for (int i = 0; i < point2.x-point1.x; i += (point2.x-point1.x)/abs(point2.x-point1.x)) {
+            final.push_back(vec2(point1.x + i, point1.y));
+        }
+    }
+    int yDiff = point1.y-point2.y;
+    int xDiff = point1.x-point2.x;
+    if (xDiff != 0 && yDiff != 0) {
+        double slope = yDiff/std::clamp(xDiff, 1, 100);
+        double yAccum = 0;
+        double xAccum = 0;
+
+        for (int i = 0; i < xDiff; i += xDiff/abs(xDiff)) {
+            yAccum += slope*i;
+            final.push_back(vec2(i + point1.x, ((int)yAccum) + point1.y));
+        }
+    }
+
+    return final;
+
+};
+static std::vector<vec2> connectAllPoints(std::vector<vec2> list) {
+    std::vector<vec2> final;
+    for (vec2 fVec : list) {
+        for (vec2 sVec : list) {
+            for (vec2 cVec : retrieveConnectionOf2Points(fVec, sVec)) {
+                final.push_back(cVec);
+            }
+        }
+    }
+    return final;
+};
+struct renderItem3D {
+    std::vector<vec3> pList;
+    vec3 rotation;
+    vec3 coordinets;
+    std::vector<vec2> renderedPoints;
+    renderItem3D(std::vector<vec3> list, vec3 rot, vec3 coords) {
+        this->pList = list;
+        this->coordinets = coords;
+        this->rotation = rot;
+    }
+    std::vector<vec3> recursiveAddition(std::vector<vec3> first, vec3 addition) {
+        std::vector<vec3> final;
+        for (vec3 vec: first) {
+            final.push_back(vec.addVec3(addition));
+        }
+        return final;
+    };
+    void renderPoints(vec3 camPos, vec3 camRot, int distance) {
+        this->renderedPoints = connectAllPoints(retrieveProjectedPoints(applyCameraTransform(
+             rotate3DPoints(recursiveAddition(this->pList, this->coordinets), this->rotation)
+             , camPos, camRot), distance));
+        // this->renderedPoints = retrieveProjectedPoints(applyCameraTransform(
+        //     rotate3DPoints(recursiveAddition(this->pList, this->coordinets), this->rotation)
+        //     , camPos, camRot), distance);
+    };
+};
+
+
 class PointHandler {
 public:
     static std::list<vec2> pointList;
     static std::vector<renderItem*> toRender;
+    static std::vector<renderItem3D*> toRender3D;
     static void addPoint(vec2 vector) {
         pointList.push_back(vector);
     }
@@ -139,6 +211,17 @@ public:
             for (vec2 vec : tempList) {
                 addPoint(vec.addVec2(item->coordinets));
             }
+        }
+    }
+    static void addPointList(std::vector<vec2> list) {
+        for (vec2 vec : list) {
+            addPoint(vec);
+        }
+    }
+    static void update3D(vec3 camPos, vec3 camRot, int distance) {
+        for (renderItem3D* item : toRender3D) {
+            item->renderPoints(camPos, camRot, distance);
+            addPointList(item->renderedPoints);
         }
     }
     static void addTriangle(vec2 list[4]) {
@@ -175,6 +258,7 @@ public:
             }
         }
     }
+
     static void addSquare(vec2 centre, int length, double rotation) {
         if (length % 2 != 0) {
             length += 1;
@@ -227,6 +311,7 @@ public:
 };
 std::list<vec2> PointHandler::pointList;
 std::vector<renderItem*> PointHandler::toRender;
+std::vector<renderItem3D*> PointHandler::toRender3D;
 
 //PointHandler::pointList = {};
 class Renderer {
@@ -270,8 +355,15 @@ int main() {
     //PointHandler::addTriangle(temp);
     //PointHandler::addSquare(vec2(15, 15), 4, 96);
     Renderer renderer;
-    renderItem item = renderItem(retrieveProjectedPoints(rotate3DPoints(PointHandler::getCubePoints(vec3(0, 0 ,0), 5), vec3(0, 0, 0)), 3), 0, vec2(15, 15));
-    PointHandler::toRender.push_back(&item);
+    //renderItem item = renderItem(retrieveProjectedPoints(rotate3DPoints(PointHandler::getCubePoints(vec3(0, 0 ,0), 5), vec3(0, 0, 0)), 3), 0, vec2(15, 15));
+    //PointHandler::toRender.push_back(&item);
+    renderItem3D item_3d = renderItem3D(PointHandler::getCubePoints(vec3(0,0,0), 4), vec3(0,0,0), vec3(0, 0, 0));
+    PointHandler::toRender3D.push_back(&item_3d);
+    renderItem3D item_3d2 = renderItem3D(PointHandler::getCubePoints(vec3(0,4,0), 4), vec3(0,0,0), vec3(0, 0, 0));
+    PointHandler::toRender3D.push_back(&item_3d2);
+    //renderItem itemTest = renderItem(PointHandler::retrieveConnectionOf2Points(vec2(5, 7), vec2(8,12)), 0, vec2(5, 18));
+    //PointHandler::toRender.push_back(&itemTest);
+
     double rotangle = 0;
     std::string nextMove;
     vec3 cameraPosMod = vec3(0, 0, 0);
@@ -308,11 +400,14 @@ int main() {
         }
         //transformations
         rotangle += 8;
+
+
+
         //item.rotation = rotangle;
         //item.coordinets = vec2(25, 13);
-        item.pList = retrieveProjectedPoints(applyCameraTransform(
-            rotate3DPoints(PointHandler::getCubePoints(vec3(0, 0 ,0), 4), vec3(0, 0, 0))
-            , cameraPosMod, cameraRotMod), 15);
+        // item.pList = retrieveProjectedPoints(applyCameraTransform(
+        //     rotate3DPoints(PointHandler::getCubePoints(vec3(0, 0 ,0), 4), vec3(0, 0, 0))
+        //     , cameraPosMod, cameraRotMod), 15);
 
 
         //PointHandler::pointList.clear();
@@ -322,6 +417,7 @@ int main() {
 
         //render
         PointHandler::update();
+        PointHandler::update3D(cameraPosMod, cameraRotMod, 4);
         renderer.render();
 
 

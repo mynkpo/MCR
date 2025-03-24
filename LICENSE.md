@@ -1,6 +1,8 @@
 https://gwgs.dev/license/gwgsgsl/
 
-# GWGSVCL (GuyWithGreenScreen's Very Cool License) - General Version
+## Copyright © 2025 mynkpo
+
+# GWGSGSL (GuyWithGreenScreen's General Software License) - General Version
 
 1. Permissions
 

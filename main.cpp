@@ -514,16 +514,12 @@ std::vector<cubeItem3D*> PointHandler::toRenderCube3D;
 
 //PointHandler::pointList = {};
 class Renderer {
-
-    public:
+public:
 
     const int width = 210;
     const int height = width * 0.3625;
 
     void render() {
-
-
-
         for (int h = 0; h < height; h++) {
             char bufferS[width];
             for (int w = 0; w < width; w++) {
@@ -539,42 +535,39 @@ class Renderer {
             std::cout << bufferS << "\n";
         }
     }
-
-
-
-
-        // std::vector<std::vector<char>> buffer;
-        // for (int h = 0; h < height; h++) {
-        //     std::vector<char> temp;
-        //     for (int w = 0; w < width; w++) {
-        //
-        //         temp.push_back('#');
-        //
-        //
-        //         // bool dr = false;
-        //         // PointHandler handler;
-        //         // dr = std::find(PointHandler::pointList.begin(), PointHandler::pointList.end(), vec2(w, h)) != PointHandler::pointList.end();
-        //         // if (dr) {
-        //         //     bufferS[w] = *"-";
-        //         // } else {
-        //         //     bufferS[w] = *"🟩";
-        //         // }
-        //     }
-        //     buffer.push_back(temp);
-        // }
-        // for (vec2 vec : PointHandler::pointList) {
-        //     buffer[vec.y][vec.x] = *"-";
-        // }
-        // for (std::vector<char> vect : buffer) {
-        //     for (char c : vect) {
-        //         std::cout << c;
-        //     }
-        //     std::cout << "\n";
-        // }
-
-    }
-
 };
+//         std::vector<std::vector<char>> buffer;
+//         for (int h = 0; h < height; h++) {
+//             std::vector<char> temp;
+//             for (int w = 0; w < width; w++) {
+//
+//                 temp.push_back('#');
+//
+//
+//                 // bool dr = false;
+//                 // PointHandler handler;
+//                 // dr = std::find(PointHandler::pointList.begin(), PointHandler::pointList.end(), vec2(w, h)) != PointHandler::pointList.end();
+//                 // if (dr) {
+//                 //     bufferS[w] = *"-";
+//                 // } else {
+//                 //     bufferS[w] = *"🟩";
+//                 // }
+//             }
+//             buffer.push_back(temp);
+//         }
+//         for (vec2 vec : PointHandler::pointList) {
+//             buffer[vec.y][vec.x] = *"-";
+//         }
+//         for (std::vector<char> vect : buffer) {
+//             for (char c : vect) {
+//                 std::cout << c;
+//             }
+//             std::cout << "\n";
+//         }
+//
+//     }
+//
+// };
 
 
 

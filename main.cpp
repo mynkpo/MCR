@@ -242,13 +242,10 @@ struct renderItem3D {
             applyCameraTransform(
                 rotate3DPoints(
                     recursiveAddition(this->pList, this->coordinets),
-                    this->rotation
-                ),
+                    this->rotation),
                 camPos,
-                camRot
-            ),
-            distanceReturn()
-        );
+                camRot),
+            distanceReturn());
         this->renderedPoints = connectCubePoints(projected);
     }
 };

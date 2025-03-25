@@ -1,0 +1,3 @@
+"D:\CLion 2024.3.4\bin\cmake\win\x64\bin\cmake.exe" -E rm -f CMakeFiles\MCR.dir/objects.a
+C:\mingw64\bin\ar.exe qc CMakeFiles\MCR.dir/objects.a @CMakeFiles\MCR.dir\objects1.rsp
+C:\mingw64\bin\c++.exe -g -Wl,--whole-archive CMakeFiles\MCR.dir/objects.a -Wl,--no-whole-archive -o MCR.exe -Wl,--out-implib,libMCR.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\MCR.dir\linkLibs.rsp

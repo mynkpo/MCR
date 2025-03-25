@@ -518,7 +518,7 @@ class Renderer {
     public:
 
     const int width = 210;
-    const int height = width * 0.2625;
+    const int height = width * 0.3625;
 
     void render() {
         for (int h = 0; h < height; h++) {

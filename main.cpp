@@ -629,6 +629,9 @@ int main() {
             GLOBAL_DAT::CAMPOS.y += 1;
         } else if (nextMove == "C") {
             GLOBAL_DAT::CAMPOS.z += 1;
+        } else if (nextMove == "B") {
+            renderItem3D temp = renderItem3D(PointHandler::getCubePoints(GLOBAL_DAT::CAMPOS, 4), vec3(0,0,0), vec3(0, 0, 0));
+            PointHandler::toRender3D.push_back(&item_3d3);
         } else {
             std::cout << "Dont recognize - " << nextMove << std::endl;
         }
